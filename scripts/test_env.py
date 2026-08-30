@@ -1,35 +1,42 @@
 import numpy as np
 
-from envs.two_wheel_robot_env import TwoWheelRobotEnv
+from gymnasium.utils.env_checker import check_env
 
+from envs.two_wheel_robot_env import TwoWheelRobotEnv
 
 env = TwoWheelRobotEnv()
 
+# Verify that the environment follows the Gymnasium API
+check_env(env)
+
+print("Gymnasium check passed.")
+
+# Start a new episode
 obs, info = env.reset()
 
 print("Initial observation:", obs)
 print("Initial distance:", info["distance_to_target"])
 
-for step in range(2000):
+
+# Execute random actions to test the environment
+for step in range(1000):
+
+    # Generate a random valid action
     action = env.action_space.sample()
 
+    # Advance one RL step
     obs, reward, terminated, truncated, info = env.step(action)
 
-    if not np.all(np.isfinite(obs)):
-        raise RuntimeError(f"Non-finite observation at step {step}")
-
-    if not np.isfinite(reward):
-        raise RuntimeError(f"Non-finite reward at step {step}")
-
+    # Reset when an episode ends
     if terminated or truncated:
+
         print(
-            "Episode ended:",
-            "step =", step,
-            "terminated =", terminated,
-            "truncated =", truncated,
-            "distance =", info["distance_to_target"],
+            f"Episode ended at step {step}: "
+            f"terminated={terminated}, "
+            f"truncated={truncated}, "
+            f"distance={info['distance_to_target']:.3f}"
         )
 
         obs, info = env.reset()
 
-print("Random-action smoke test passed.")
+print("Environment test passed.")

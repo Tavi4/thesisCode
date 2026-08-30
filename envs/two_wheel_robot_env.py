@@ -5,6 +5,7 @@ import mujoco
 
 from scripts.functions import (
     get_observation,
+    get_distance_to_target,
     compute_reward,
     is_success,
     reset_robot,
@@ -14,25 +15,25 @@ MAX_STEER = np.deg2rad(25)
 
 
 class TwoWheelRobotEnv(gym.Env):
-    metadata = {"render_modes": []}
 
     def __init__(self):
-        self.frame_skip = 10
-
-        self.max_episode_steps = 500
-        self.current_step = 0
-        
         super().__init__()
 
         self.model = mujoco.MjModel.from_xml_path(
             "models/two_wheel_robot.xml"
         )
-
         self.data = mujoco.MjData(self.model)
 
-        # RL action:
-        # action[0] = drive
-        # action[1] = steering
+        self.previous_distance = None
+
+        # Number of MuJoCo physics steps for one RL step
+        self.frame_skip = 10
+
+        # Maximum length of one episode
+        self.max_episode_steps = 500
+        self.current_step = 0
+
+        # action = [drive, steering]
         self.action_space = spaces.Box(
             low=-1.0,
             high=1.0,
@@ -40,7 +41,7 @@ class TwoWheelRobotEnv(gym.Env):
             dtype=np.float32,
         )
 
-        # Current observation:
+        # observation =
         # [x, y, yaw, vx, vy, yaw_rate, steer_left, steer_right]
         self.observation_space = spaces.Box(
             low=-np.inf,
@@ -55,11 +56,11 @@ class TwoWheelRobotEnv(gym.Env):
         drive = action[0]
         steering = action[1] * MAX_STEER
 
-        # Synchronous drive
+        # Same drive command for both wheels
         self.data.ctrl[0] = drive
         self.data.ctrl[1] = drive
 
-        # Synchronous steering
+        # Same steering command for both wheels
         self.data.ctrl[2] = steering
         self.data.ctrl[3] = steering
 
@@ -67,6 +68,11 @@ class TwoWheelRobotEnv(gym.Env):
         super().reset(seed=seed)
 
         reset_robot(self.model, self.data)
+
+        self.previous_distance = get_distance_to_target(
+            self.model,
+            self.data,
+        )
 
         self.current_step = 0
 
@@ -76,8 +82,9 @@ class TwoWheelRobotEnv(gym.Env):
         )
 
         info = {
-            "distance_to_target": float(
-                -compute_reward(self.model, self.data)
+            "distance_to_target": get_distance_to_target(
+                self.model,
+                self.data,
             )
         }
 
@@ -86,11 +93,9 @@ class TwoWheelRobotEnv(gym.Env):
     def step(self, action):
         self._apply_action(action)
 
+        # Advance MuJoCo physics
         for _ in range(self.frame_skip):
-            mujoco.mj_step(
-                self.model,
-                self.data,
-            )
+            mujoco.mj_step(self.model, self.data)
 
         self.current_step += 1
 
@@ -99,20 +104,34 @@ class TwoWheelRobotEnv(gym.Env):
             self.data,
         )
 
-        reward = compute_reward(
+        current_distance = get_distance_to_target(
             self.model,
             self.data,
         )
+
+        reward = self.previous_distance - current_distance
 
         terminated = is_success(
             self.model,
             self.data,
         )
 
-        truncated = self.current_step >= self.max_episode_steps
+        if terminated:
+            reward += 10.0
+
+        self.previous_distance = current_distance
+
+        terminated = is_success(
+            self.model,
+            self.data,
+        )
+
+        truncated = (
+            self.current_step >= self.max_episode_steps
+        )
 
         info = {
-            "distance_to_target": float(-reward)
+            "distance_to_target": current_distance
         }
 
         return (
