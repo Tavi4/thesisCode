@@ -2,11 +2,18 @@ import numpy as np
 import mujoco
 
 
-MAX_STEER = np.deg2rad(25)
-
+MAX_STEER = np.deg2rad(30)
 SUCCESS_DISTANCE = 0.10
 
-def apply_direct_controls(data, drive_left, drive_right, steer_left, steer_right):
+
+def apply_direct_controls(
+    data,
+    drive_left,
+    drive_right,
+    steer_left,
+    steer_right,
+):
+    #Applying independent controls for manual testing.
     data.ctrl[0] = np.clip(drive_left, -1.0, 1.0)
     data.ctrl[1] = np.clip(drive_right, -1.0, 1.0)
 
@@ -22,8 +29,9 @@ def apply_direct_controls(data, drive_left, drive_right, steer_left, steer_right
         MAX_STEER,
     )
 
+
 def get_observation(model, data):
-    # Joint IDs
+    #Return the 8 values observed by the RL agent.
     x_id = model.joint("robot_x").id
     y_id = model.joint("robot_y").id
     yaw_id = model.joint("robot_yaw").id
@@ -31,87 +39,67 @@ def get_observation(model, data):
     steer_left_id = model.joint("steer_left_joint").id
     steer_right_id = model.joint("steer_right_joint").id
 
-    # qpos addresses
-    x_qpos = model.jnt_qposadr[x_id]
-    y_qpos = model.jnt_qposadr[y_id]
-    yaw_qpos = model.jnt_qposadr[yaw_id]
-
-    steer_left_qpos = model.jnt_qposadr[steer_left_id]
-    steer_right_qpos = model.jnt_qposadr[steer_right_id]
-
-    # qvel addresses
-    x_qvel = model.jnt_dofadr[x_id]
-    y_qvel = model.jnt_dofadr[y_id]
-    yaw_qvel = model.jnt_dofadr[yaw_id]
-
     observation = np.array([
-        data.qpos[x_qpos],
-        data.qpos[y_qpos],
-        data.qpos[yaw_qpos],
+        # Position and orientation
+        data.qpos[model.jnt_qposadr[x_id]],
+        data.qpos[model.jnt_qposadr[y_id]],
+        data.qpos[model.jnt_qposadr[yaw_id]],
 
-        data.qvel[x_qvel],
-        data.qvel[y_qvel],
-        data.qvel[yaw_qvel],
+        # Linear and angular velocity
+        data.qvel[model.jnt_dofadr[x_id]],
+        data.qvel[model.jnt_dofadr[y_id]],
+        data.qvel[model.jnt_dofadr[yaw_id]],
 
-        data.qpos[steer_left_qpos],
-        data.qpos[steer_right_qpos],
+        # Steering angles
+        data.qpos[model.jnt_qposadr[steer_left_id]],
+        data.qpos[model.jnt_qposadr[steer_right_id]],
     ], dtype=np.float32)
 
     return observation
 
-def get_target_position(model, data):
-    target_id = model.body("target").id
-    return data.xpos[target_id][:2].copy()
-
 
 def get_robot_position(model, data):
+
+    #Return robot position on the XY plane.
     x_id = model.joint("robot_x").id
     y_id = model.joint("robot_y").id
 
-    x_qpos = model.jnt_qposadr[x_id]
-    y_qpos = model.jnt_qposadr[y_id]
-
     return np.array([
-        data.qpos[x_qpos],
-        data.qpos[y_qpos],
+        data.qpos[model.jnt_qposadr[x_id]],
+        data.qpos[model.jnt_qposadr[y_id]],
     ], dtype=np.float32)
 
 
+def get_target_position(model, data):
+
+    #Return target position on the XY plane.
+    target_id = model.body("target").id
+
+    return data.xpos[target_id][:2].copy()
+
+
 def get_distance_to_target(model, data):
-    robot_pos = get_robot_position(model, data)
-    target_pos = get_target_position(model, data)
 
-    return np.linalg.norm(target_pos - robot_pos)
+    #Return Euclidean distance between robot and target.
+    robot_position = get_robot_position(model, data)
+    target_position = get_target_position(model, data)
 
-
-def compute_reward(model, data):
-    distance = get_distance_to_target(model, data)
-
-    reward = -distance
-
-    return float(reward)
-
-SUCCESS_DISTANCE = 0.10
+    return float(
+        np.linalg.norm(target_position - robot_position)
+    )
 
 
 def is_success(model, data):
-    distance = get_distance_to_target(model, data)
-
-    return distance < SUCCESS_DISTANCE
+    
+    #Check if the robot reached the target.
+    return (
+        get_distance_to_target(model, data)
+        < SUCCESS_DISTANCE
+    )
 
 
 def reset_robot(model, data):
+
+    #Reset MuJoCo simulation to its initial state.
     mujoco.mj_resetData(model, data)
-
-    # Poziția inițială a robotului
-    x_id = model.joint("robot_x").id
-    y_id = model.joint("robot_y").id
-    z_id = model.joint("robot_z").id
-    yaw_id = model.joint("robot_yaw").id
-
-    data.qpos[model.jnt_qposadr[x_id]] = 0.0
-    data.qpos[model.jnt_qposadr[y_id]] = 0.0
-    data.qpos[model.jnt_qposadr[z_id]] = 0.0
-    data.qpos[model.jnt_qposadr[yaw_id]] = 0.0
-
     mujoco.mj_forward(model, data)
