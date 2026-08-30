@@ -2,8 +2,7 @@ import time
 import mujoco
 import mujoco.viewer
 
-from functions import apply_direct_controls
-
+import scripts.functions as functions
 
 model = mujoco.MjModel.from_xml_path(
     "models/two_wheel_robot.xml"
@@ -11,9 +10,8 @@ model = mujoco.MjModel.from_xml_path(
 
 data = mujoco.MjData(model)
 
-
 print("\nChoose test mode:")
-print("1. No input / stay still")
+print("1. No input")
 print("2. Default movement")
 print("3. Custom controls")
 
@@ -69,7 +67,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
     while viewer.is_running():
 
-        apply_direct_controls(
+        functions.apply_direct_controls(
             data,
             drive_left,
             drive_right,
