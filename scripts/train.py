@@ -10,10 +10,11 @@ model = PPO(
     env,
     verbose=1,
     device="cpu",
+    tensorboard_log="./tensorboard/",
 )
 
 model.learn(
-    total_timesteps=100_000
+    total_timesteps=300_000
 )
 
 model.save("ppo_two_wheel_robot")

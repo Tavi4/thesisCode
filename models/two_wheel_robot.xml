@@ -146,7 +146,7 @@
        
        <body name="target"
               mocap="true"
-              pos="1.0 1.0 0.05">
+              pos="1.0 0.7 0.05">
 
               <geom name="target_geom"
                      type="sphere"
