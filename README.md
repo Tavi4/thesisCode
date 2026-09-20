@@ -7,3 +7,10 @@ to install what's needed:
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+
+
+
+WITS:
+python -m wits.part1Basic
+...
+python -m wits.part7WellTrained

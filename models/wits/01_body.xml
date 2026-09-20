@@ -1,0 +1,25 @@
+<mujoco model="body">
+
+    <worldbody>
+
+        <light pos="0 0 2"
+               dir="0 0 -1"/>
+
+        <geom name="floor"
+            type="plane"
+            size="2 2 0.1"
+            rgba="0.85 0.85 0.85 1"
+        />
+
+        <body pos="0 0 0.1">
+            <geom
+                type="cylinder"
+                fromto="0 -0.23 0 0 0.23 0"
+                size="0.025"
+                rgba="0.20 0.35 0.80 1"
+            />
+        </body>
+
+    </worldbody>
+
+</mujoco>
