@@ -33,7 +33,7 @@ elif choice == "2":
 
 elif choice == "3":
     print("\nValues for drive must be between -1 and 1.")
-    print("Steering is entered in degrees, between -25 and 25.\n")
+    print("Steering is entered in degrees, between -30 and 30.\n")
 
     drive_left = float(
         input("Left wheel drive [-1, 1]: ")
@@ -44,11 +44,11 @@ elif choice == "3":
     )
 
     steer_left = float(
-        input("Left steering angle [-25, 25] deg: ")
+        input("Left steering angle [-30, 30] deg: ")
     )
 
     steer_right = float(
-        input("Right steering angle [-25, 25] deg: ")
+        input("Right steering angle [-30, 30] deg: ")
     )
 
 else:

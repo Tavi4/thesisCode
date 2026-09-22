@@ -11,6 +11,6 @@ pip install -r requirements.txt
 
 
 WITS:
-python -m wits.part1Basic
+python -m wits.1part1Build
 ...
-python -m wits.part7WellTrained
+python -m wits.3part7WellTrained

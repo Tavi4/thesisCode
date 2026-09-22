@@ -14,7 +14,7 @@ model = PPO(
 )
 
 model.learn(
-    total_timesteps=300_000
+    total_timesteps=500_000
 )
 
 model.save("ppo_two_wheel_robot")
