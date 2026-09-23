@@ -13,7 +13,6 @@ model = PPO.load(
 )
 
 observation, info = env.reset()
-
 initial_distance = info["distance_to_target"]
 
 
@@ -25,33 +24,38 @@ with mujoco.viewer.launch_passive(env.model, env.data) as viewer:
         f"{initial_distance:.2f} m"
     )
 
-    episode_finished = False
-
     while viewer.is_running():
 
-        if not episode_finished:
+        action, _ = model.predict(
+            observation,
+            deterministic=True,
+        )
 
-            action, _ = model.predict(
-                observation,
-                deterministic=True,
+        observation, reward, terminated, truncated, info = env.step(action)
+
+        if terminated or truncated:
+
+            final_distance = info["distance_to_target"]
+
+            print("\nEpisode finished.")
+            print(
+                "Initial distance:",
+                f"{initial_distance:.2f} m"
+            )
+            print(
+                "Final distance:  ",
+                f"{final_distance:.2f} m"
             )
 
-            observation, reward, terminated, truncated, info = env.step(action)
+            # Start a new episode
+            observation, info = env.reset()
+            initial_distance = info["distance_to_target"]
 
-            if terminated or truncated:
-                episode_finished = True
-
-                final_distance = info["distance_to_target"]
-
-                print("\nEpisode finished.")
-                print(
-                    "Initial distance:",
-                    f"{initial_distance:.2f} m"
-                )
-                print(
-                    "Final distance:  ",
-                    f"{final_distance:.2f} m"
-                )
+            print("\nNew episode")
+            print(
+                "Initial distance:",
+                f"{initial_distance:.2f} m"
+            )
 
         viewer.sync()
 

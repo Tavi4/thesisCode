@@ -6,7 +6,7 @@ import scripts.functions as functions
 
 
 model = mujoco.MjModel.from_xml_path(
-    "models/two_wheel_robot.xml"
+    "models/wits/two_wheel_robot_wits.xml"
 )
 
 data = mujoco.MjData(model)

@@ -16,7 +16,7 @@ model = PPO(
 )
 
 model.learn(
-    total_timesteps=5000
+    total_timesteps=10000
 )
 
 

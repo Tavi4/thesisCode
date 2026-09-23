@@ -26,7 +26,12 @@ if model_path is None:
 model = mujoco.MjModel.from_xml_path(model_path)
 data = mujoco.MjData(model)
 
+
 with mujoco.viewer.launch_passive(model, data) as viewer:
+
+    if choice == "3":
+        viewer.opt.flags[mujoco.mjtVisFlag.mjVIS_JOINT] = True
+        viewer.opt.flags[mujoco.mjtVisFlag.mjVIS_ACTUATOR] = True
 
     while viewer.is_running():
         step_start = time.time()
